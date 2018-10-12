@@ -1,5 +1,5 @@
 import numpy as np
-from tree import *
+from tree_hc import *
 
 def import_ilp_out(filepath, k_dollo, mutation_names):
     in_matrix = np.genfromtxt(filepath, skip_header=0, delimiter=' ')
