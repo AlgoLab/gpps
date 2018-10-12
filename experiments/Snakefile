@@ -1,0 +1,65 @@
+'''
+
+   experiments for gpps ...
+
+'''
+
+# programs
+_ilp_ = '../gpps'
+
+# memory and runtime
+memlimit = 64 * 1024 * 1024 # 64GB memory limit (in KB)
+time = '/usr/bin/time'
+
+# parameters
+files = ['../data/real/gawad1']
+cutoffs = [86400] # 24 * 3600 (24 hours)
+
+# patterns
+kab_pattern = 'k{kappa,[0-9]+}-a{alpha,[0-9]+(|.[0-9]+)}-b{beta,[0-9]+(|.[0-9]+)}'
+ilp_pattern = 'ilp-' + kab_pattern + '-c{cutoff,[0-9]+}'
+
+#
+# group parameters with list-defining functions
+#----------------------------------------------------------------------
+
+# kappa, alpha, beta
+def kabs(kappas_, alphas_, betas_) :
+        return ['k{}-a{}-b{}'.format(kappa_, alpha_, beta_)
+                for kappa_ in kappas_
+                for alpha_ in alphas_
+                for beta_ in betas_]
+
+#
+# master rule
+#----------------------------------------------------------------------
+rule master :
+	input :
+		expand('{file}.txt.ilp-{kab}-c{cutoff}/.out',
+			file = files,
+			kab = kabs([1], [0.3], [0.0001]),
+			cutoff = cutoffs)
+
+#
+# run gpps
+#----------------------------------------------------------------------
+rule run_ilp :
+	input :
+		prgm = _ilp_,
+		matrix = '{file}.txt'
+
+	output : '{file}.txt.' + ilp_pattern + '/.out'
+
+	log :
+		dir = '{file}.txt.' + ilp_pattern + '/',
+		log = '{file}.txt.' + ilp_pattern + '/log',
+		time = '{file}.txt.' + ilp_pattern + '/time',
+
+	shell : '''
+
+   ulimit -Sv {memlimit}
+   {time} -v -o {log.time} \
+      python {input.prgm} -f {input.matrix} \
+         -k {wildcards.kappa} -a {wildcards.alpha} -b {wildcards.beta} \
+         -t {wildcards.cutoff} -o {log.dir} > {log.log} 2>&1
+   touch {output} '''
