@@ -1,107 +1,54 @@
+#!/usr/bin/python
+import sys
+import os
+import random
 import numpy as np
-from nh2lgf import newick_to_edgelist
+
+f_app = None
+
+hash_clone = {}
+
 
 class Node:
-    def __init__(self, name, parent, id_node, mutation_id, loss=False, tot_mutations=0, gt_build=True):
+    def __init__(self, name, parent, mut):
         self.name = name
-        self.id_node = id_node
         self.parent = parent
         self.children = []
-        self.loss = loss
-        self.mut_id = mutation_id
-        self.tot_mutations = tot_mutations
+        self.binary = []
         if parent:
             parent.children.append(self)
-
-            if gt_build:
-                gt_par_cp = parent.genotype_profile.copy()
-                if self.loss:
-                    gt_par_cp[mutation_id] -= 1
-                else:
-                    gt_par_cp[mutation_id] += 1
-
-                # # TODO: delete debug
-                # if gt_par_cp[mutation_id] == 2:
-                #     print('2')
-                # if gt_par_cp[mutation_id] == -1:
-                #     print('-1, %s' % self.name)
-
-                self.genotype_profile = gt_par_cp
+            self.binary = list(self.parent.binary)
+            self.binary[mut] = 1
+            key = ''.join(str(e) for e in self.binary)
+            global hash_clone
+            hash_clone[key] = self
         else:
-            self.genotype_profile = [0 for x in range(tot_mutations)]
+            for i in range(mut):
+                self.binary.append(0)
 
-    def is_ancestor_of(self, node):
-        par = node.parent
-        while par:
-            if par == self:
-                return True
-            par = par.parent
-        return False
-
-    def print_node_dot(self):
+    def print_node(self):
         if not self.parent == None:
-            print('\t"%s" -> "%s";' % (self.parent.id_node, self.id_node))
-            if not '-' in self.name:
-                print('\t"{0}" [label="{1}"];'.format(self.id_node, self.name))
-            else:
-                print('\t"{0}" [color=indianred1, style=filled, label="{1}"];'.format(self.id_node, self.name[:-1]))
-    def print_node_dot_file(self, fout):
-        if not self.parent == None:
-            fout.write('\t"%s" -> "%s";\n' % (self.parent.id_node, self.id_node))
-            if not '-' in self.name:
-                fout.write('\t"{0}" [label="{1}"];\n'.format(self.id_node, self.name))
-            else:
-                fout.write('\t"{0}" [color=indianred1, style=filled, label="{1}"];\n'.format(self.id_node, self.name[:-1]))
+            global f_app
+            f_app.write('\t"%s" -- "%s";\n' % (self.parent.name, self.name))
 
-def add_edge(start, end):
-    start.children.append(end)
-    end.parent = start
 
-def __print_tree(node):
+def print_tree(node):
     if len(node.children) == 0:
-        node.print_node_dot()
+        node.print_node()
     else:
-        node.print_node_dot()
+        node.print_node()
         for child in node.children:
-            __print_tree(child)
+            print_tree(child)
 
-def __print_tree_file(node, fout):
-    if len(node.children) == 0:
-        node.print_node_dot_file(fout)
-    else:
-        node.print_node_dot_file(fout)
-        for child in node.children:
-            __print_tree_file(child, fout)
 
-def print_dot_tree(node):
-    print('digraph phylogeny {')
-    print('\t"{0}" [label="{1}"];'.format(node.id_node, node.name))
-    __print_tree(node)
-    print('}')
-
-def print_dot_tree_file(node, fout):
-    fout.write('digraph phylogeny {\n')
-    fout.write('\t"{0}" [label="{1}"];\n'.format(node.id_node, node.name))
-    __print_tree_file(node, fout)
-    fout.write('}\n')
-
-def __copy_tree_rec(node, cp_parent, nid_dict):
-    node_cp = Node(node.name, cp_parent, node.id_node, node.mut_id, loss=node.loss)
-    nid_dict[node_cp.id_node] = node_cp
-    if len(node.children) == 0:
-        return
-    for child in node.children:
-        __copy_tree_rec(child, node_cp, nid_dict)
-
-def copy_tree(root):
-    nid_nodes = {}
-    cp_root = Node(root.name, root.parent, root.id_node, root.mut_id, tot_mutations=root.tot_mutations)
-    nid_nodes[root.id_node] = cp_root
-    for child in root.children:
-        __copy_tree_rec(child, cp_root, nid_nodes)
-    return cp_root, nid_nodes
+def print_dot_tree(node, usage_matrix, names, clones):
+    f_app.write('graph phylogeny {\n')
+    print_tree(node)
+    f_app.write('}\n')
 
 # True if col1 contains col2
+
+
 def contains(col1, col2):
     for i in range(len(col1)):
         if not col1[i] >= col2[i]:
@@ -109,167 +56,50 @@ def contains(col1, col2):
     return True
 
 
-def build_tree_from_file(filepath, mutations_names, mutations_ids, tot_mutations):
-    from subprocess import Popen, PIPE
+def build_tree(matrix, names, usage, append_file):
+    global f_app
+    f_app = append_file
+    rows = len(matrix)
+    cols = len(matrix[0])
 
-    rb_tree = Popen(['ruby', 'tree', '-m', filepath], stdout=PIPE)
-    stdout, _ = rb_tree.communicate()
-    stdout = stdout.decode("utf-8").strip()
-    # print(stdout)
-    
-    tree = stdout
-    node_dict, edges = newick_to_edgelist(tree)
+    dimensions = np.sum(matrix, axis=0)
+    # ordered indeces
+    indeces = np.argsort(dimensions)
+    dimensions = np.sort(dimensions)
 
-    building_dictionary = {}
-    nid = 0
+    mutations_name = []
+    for i in range(cols):
+        mutations_name.append(names[indeces[i]])
 
-    # Get germline nid:
-    for k in node_dict:
-        if node_dict[k] == 'germline':
-            nid = k
+    # REMEMBER:
+    # get the i-th columk with matrix[:,i]
 
-    root = Node('germline', None, nid, -1, tot_mutations=tot_mutations)
-    building_dictionary[nid] = root
+    root = Node('germline', None, cols)
 
-    for edge in edges:
-        e, s = edge
-        # print(s, e)
+    driver_mut = Node(mutations_name[-1], root, indeces[-1])
 
-        x = None
-        try:
-            x = building_dictionary[s]
-        except KeyError:
-            x_column_index = int(node_dict[s][1:]) - 1
-            if '---' in mutations_names[x_column_index]:
-                loss = True
-            else:
-                loss = False
-            x = Node(mutations_names[x_column_index], 
-                    None, s, mutations_ids[x_column_index], gt_build=False, loss=loss)
-            building_dictionary[s] = x
+    mut_nod = {}
 
-        y = None
-        try:
-            y = building_dictionary[e]
-        except KeyError:
-            y_column_index = int(node_dict[e][1:]) - 1
-            if '---' in mutations_names[y_column_index]:
-                loss = True
-            else:
-                loss = False
-            y = Node(mutations_names[y_column_index],
-                    None, e, mutations_ids[y_column_index], gt_build=False, loss=loss)
-            building_dictionary[e] = y
-        # print(x,y)
-        add_edge(x, y)
+    mut_nod[mutations_name[cols-1]] = driver_mut
 
-    # print_dot_tree(root)
-    calculate_genotype_profile_subtree(root, building_dictionary)
+    i = cols - 2
+    while i >= 0:
+        if dimensions[i] == 0:
+            break
 
-    return (root, building_dictionary)
+        attached = False
+        for j in range(i+1, cols):
+            if contains(matrix[:, indeces[j]], matrix[:, indeces[i]]):
+                node = Node(
+                    mutations_name[i], mut_nod[mutations_name[j]], indeces[i])
+                mut_nod[mutations_name[i]] = node
+                attached = True
+                break
 
-def calculate_genotype_profile_subtree(node, nid_dict):
-    if node.parent:
-        gt_par_cp = node.parent.genotype_profile.copy()
-        if node.loss:
-            gt_par_cp[node.mut_id] -= 1
-        else:
-            gt_par_cp[node.mut_id] += 1
-        node.genotype_profile = gt_par_cp
+        if not attached:
+            node = Node(mutations_name[i], root, indeces[i])
+            mut_nod[mutations_name[i]] = node
+        i -= 1
 
-        # # TODO: fix this
-        # if gt_par_cp[node.mut_id] == 2:
-        #     print('2, %s' % node.name)
-        # if gt_par_cp[node.mut_id] == -1:
-        #     print('-1, %s, %d' % (node.name, node.id_node), node.children, node.mut_id)
-        #     print('valid:', is_loss_valid(node, node.mut_id))
-        #     print('lost:', is_already_lost(node, node.mut_id))
-            # children = node.children
-            # if not is_loss_valid(node, node.mut_id):
-                # print('delete', node.name, node.id_node)
-                # delete_node(node, nid_dict)
-
-    else:
-        # This assumes that the root is correctly initiated at all 0s
-        pass
-    if len(node.children) == 0:
-        return
-    for child in node.children:
-        calculate_genotype_profile_subtree(child, nid_dict)
-
-
-def prune_and_reattach(node_prune, node_reattach, nid_dict):
-    if node_prune.is_ancestor_of(node_reattach):
-        return False
-    node_prune.parent.children.remove(node_prune)
-    node_prune.parent = node_reattach
-    node_reattach.children.append(node_prune)
-
-    # print('pr in')
-    check_subtree_losses(node_reattach, nid_dict)
-
-    # rebuild genotype profile of pruned subtree
-    calculate_genotype_profile_subtree(node_reattach, nid_dict)
-    # print('pr out')
-
-    return True
-
-def is_loss_valid(node, mut_id):
-    par = node.parent
-    while par:
-        if par.mut_id == mut_id:
-            return True
-        par = par.parent
-    return False
-
-def is_already_lost(node, mut_id):
-    par = node.parent
-    while par:
-        if par.loss == True and par.mut_id == mut_id:
-            return True
-        par = par.parent
-    return False
-
-def delete_node(node, nid_dict):
-    parent = node.parent
-    # node.parent = None
-    parent.children.remove(node)
-    for child in node.children:
-        child.parent = parent
-        parent.children.append(child)
-    nid_dict.pop(node.id_node)
-    # print('Deleted node: (%s, %d)' % (node.name, node.id_node))
-    node = None
-
-def check_subtree_losses(node, nid_dict):
-    if node.loss:
-        valid = is_loss_valid(node, node.mut_id)
-        lost = is_already_lost(node, node.mut_id)
-
-        if not valid or lost:
-            
-            # print('to delete', node.name, node.id_node)
-            delete_node(node, nid_dict)
-
-    if len(node.children) == 0:
-        return
-    for child in node.children:
-        check_subtree_losses(child, nid_dict)
-
-if __name__ == '__main__':
-    root = Node('germline', None, 0, -1)
-    a = Node('a', root, 1, 1)
-    b = Node('b', root, 2, 2)
-    c = Node('c', a, 3, 3)
-    d = Node('d', a, 4, 4)
-    e = Node('e', c, 5, 5)
-    f = Node('f', b, 6, 6)
-
-    # prune_and_reattach(c, f)
-
-    # delete_node(c)
-
-    cp_root, cp_dict = copy_tree(root)
-
-    print_dot_tree(root)
-    print_dot_tree(cp_root)
+    print_dot_tree(root, usage, names, matrix)
+    return root, mut_nod
