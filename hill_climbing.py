@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from tree import *
+from tree_hc import *
 from utils import *
 from functools import lru_cache
 import argparse, os, sys, errno, random
