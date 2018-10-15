@@ -6,18 +6,22 @@
 
 # programs
 _ilp_ = '../gpps'
+_hc_ = '../hill_climbing.py'
 
 # memory and runtime
 memlimit = 64 * 1024 * 1024 # 64GB memory limit (in KB)
 time = '/usr/bin/time'
 
 # parameters
-files = ['../data/real/gawad1']
+paths = ['../data/real']
+files = ['gawad1']
 cutoffs = [86400] # 24 * 3600 (24 hours)
 
 # patterns
+file_pattern = '{file,[-\w_]+}'
 kab_pattern = 'k{kappa,[0-9]+}-a{alpha,[0-9]+(|.[0-9]+)}-b{beta,[0-9]+(|.[0-9]+)}'
 ilp_pattern = 'ilp-' + kab_pattern + '-c{cutoff,[0-9]+}'
+hc_pattern = 'hc-' + kab_pattern + '-c{cutoff,[0-9]+}-ns{ns,[0-9]+}-mi{mi,[0-9]+}'
 
 #
 # group parameters with list-defining functions
@@ -35,10 +39,10 @@ def kabs(kappas_, alphas_, betas_) :
 #----------------------------------------------------------------------
 rule master :
 	input :
-		expand('{file}.txt.ilp-{kab}-c{cutoff}/.out',
-			file = files,
+		expand('{path}/{file}.txt.hc-{kab}-c{cutoff}-ns{ns}-mi{mi}/.out',
+			path = paths, file = files,
 			kab = kabs([1], [0.3], [0.0001]),
-			cutoff = cutoffs)
+			cutoff = cutoffs, ns = [500], mi = [50])
 
 #
 # run gpps
@@ -46,14 +50,14 @@ rule master :
 rule run_ilp :
 	input :
 		prgm = _ilp_,
-		matrix = '{file}.txt'
+		matrix = '{path}/{file}.txt'
 
-	output : '{file}.txt.' + ilp_pattern + '/.out'
+	output : '{path}/'+file_pattern+'.txt.'+ilp_pattern+'/{file}.ilp.extended.out'
 
 	log :
-		dir = '{file}.txt.' + ilp_pattern + '/',
-		log = '{file}.txt.' + ilp_pattern + '/log',
-		time = '{file}.txt.' + ilp_pattern + '/time',
+		dir = '{path}/{file}.txt.' + ilp_pattern + '/',
+		log = '{path}/{file}.txt.' + ilp_pattern + '/log',
+		time = '{path}/{file}.txt.' + ilp_pattern + '/time',
 
 	shell : '''
 
@@ -61,5 +65,27 @@ rule run_ilp :
    {time} -v -o {log.time} \
       python {input.prgm} -f {input.matrix} \
          -k {wildcards.kappa} -a {wildcards.alpha} -b {wildcards.beta} \
-         -t {wildcards.cutoff} -o {log.dir} > {log.log} 2>&1
+         -t {wildcards.cutoff} -o {log.dir} > {log.log} 2>&1 '''
+
+# run the hill-climbing
+rule run_hc :
+	input :
+		prgm = _hc_,
+		ilp_out = '{path}/{file}.txt.'+ilp_pattern+'/{file}.ilp.extended.out',
+		matrix = '{path}/{file}.txt'
+
+	output : '{path}/' + file_pattern + '.txt.' + hc_pattern + '/.out'
+
+	log :
+		dir = '{path}/{file}.txt.' + hc_pattern + '/',
+		log = '{path}/{file}.txt.' + hc_pattern + '/log',
+		time = '{path}/{file}.txt.' + hc_pattern + '/time'
+
+	shell : '''
+
+   ulimit -Sv {memlimit}
+   {time} -v -o {log.time} \
+      python {input.prgm} -i {input.ilp_out} -s {input.matrix} \
+         -k {wildcards.kappa} -a {wildcards.alpha} -b {wildcards.beta} \
+         --ns {wildcards.ns} --mi {wildcards.mi} -o {log.dir} > {log.log} 2>&1
    touch {output} '''
