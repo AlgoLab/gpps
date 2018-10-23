@@ -16,6 +16,8 @@ time = '/usr/bin/time'
 paths = ['../data/real']
 files = ['gawad1']
 cutoffs = [86400] # 24 * 3600 (24 hours)
+nss = [50, 100, 500]
+mis = [10, 20, 30, 50]
 
 # patterns
 file_pattern = '{file,[-\w_]+}'
@@ -42,7 +44,7 @@ rule master :
 		expand('{path}/{file}.txt.hc-{kab}-c{cutoff}-ns{ns}-mi{mi}/.out',
 			path = paths, file = files,
 			kab = kabs([1], [0.3], [0.0001]),
-			cutoff = cutoffs, ns = [500], mi = [10, 20, 30, 50])
+			cutoff = cutoffs, ns = nss, mi = mis)
 
 #
 # run gpps
