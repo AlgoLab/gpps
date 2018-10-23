@@ -42,7 +42,7 @@ rule master :
 		expand('{path}/{file}.txt.hc-{kab}-c{cutoff}-ns{ns}-mi{mi}/.out',
 			path = paths, file = files,
 			kab = kabs([1], [0.3], [0.0001]),
-			cutoff = cutoffs, ns = [500], mi = [50])
+			cutoff = cutoffs, ns = [500], mi = [10, 20, 30, 50])
 
 #
 # run gpps
