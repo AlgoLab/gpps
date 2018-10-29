@@ -22,7 +22,7 @@ paths = [git_root + '/data/real']
 files = ['gawad1']
 cutoffs = [86400] # 24 * 3600 (24 hours)
 nss = [50, 100, 500]
-mis = [10, 20, 30, 50]
+mis = [50]
 
 # patterns
 file_pattern = '{file,[-\w_]+}'
