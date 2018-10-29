@@ -117,8 +117,7 @@ def hill_climbing(start_tree, start_nid_dict, neighbourhood_size, max_iterations
     current_iteration = 0
     while current_iteration < max_iterations:
 
-        if current_iteration % 50 == 0:
-            print('Current iteration: %d' % current_iteration)
+        print('Current iteration: %d' % current_iteration)
 
         neighbours = generate_neighbourhood(current_tree, current_dict, neighbourhood_size)
         next_eval = -np.inf
