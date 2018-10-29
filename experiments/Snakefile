@@ -4,16 +4,21 @@
 
 '''
 
+# root of current git repo
+import git
+git_repo = git.Repo(search_parent_directories=True)
+git_root = git_repo.git.rev_parse("--show-toplevel")
+
 # programs
-_ilp_ = '../gpps'
-_hc_ = '../hill_climbing.py'
+_ilp_ = git_root + '/gpps'
+_hc_ = git_root + '/hill_climbing.py'
 
 # memory and runtime
 memlimit = 64 * 1024 * 1024 # 64GB memory limit (in KB)
 time = '/usr/bin/time'
 
 # parameters
-paths = ['../data/real']
+paths = [git_root + '/data/real']
 files = ['gawad1']
 cutoffs = [86400] # 24 * 3600 (24 hours)
 nss = [50, 100, 500]
