@@ -90,9 +90,10 @@ rule run_hc :
 
 	shell : '''
 
+   cd ..
    ulimit -Sv {memlimit}
    {time} -v -o {log.time} \
-      python {input.prgm} -i {input.ilp_out} -s {input.matrix} \
+      python hill_climbing.py -i {input.ilp_out} -s {input.matrix} \
          -k {wildcards.kappa} -a {wildcards.alpha} -b {wildcards.beta} \
          --ns {wildcards.ns} --mi {wildcards.mi} -o {log.dir} > {log.log} 2>&1
    touch {output} '''
