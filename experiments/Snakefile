@@ -79,7 +79,8 @@ rule run_hc :
 	input :
 		prgm = _hc_,
 		ilp_out = '{path}/{file}.txt.'+ilp_pattern+'/{file}.ilp.extended.out',
-		matrix = '{path}/{file}.txt'
+		matrix = '{path}/{file}.txt',
+		names = '{path}/{file}_mutations.txt'
 
 	output : '{path}/' + file_pattern + '.txt.' + hc_pattern + '/.out'
 
@@ -95,5 +96,6 @@ rule run_hc :
    {time} -v -o {log.time} \
       python hill_climbing.py -i {input.ilp_out} -s {input.matrix} \
          -k {wildcards.kappa} -a {wildcards.alpha} -b {wildcards.beta} \
-         --ns {wildcards.ns} --mi {wildcards.mi} -o {log.dir} > {log.log} 2>&1
+         --ns {wildcards.ns} --mi {wildcards.mi} --names {input.names} \
+         -o {log.dir} > {log.log} 2>&1
    touch {output} '''
