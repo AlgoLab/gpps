@@ -28,6 +28,8 @@ parser.add_argument('-t', '--time', action='store', type=int, required=True,
 parser.add_argument('-o', '--outdir', action='store', type=str, required=True,
                     help='output directory.')
 
+parser.add_argument('-d', '--maxdel', action='store', type=int, default=-1, help='maximum number of deletion allowed')
+
 parser.add_argument('-e', '--exp', action='store_true', default=False,
                     help='set -e to get experimental-format results.')
 parser.add_argument('-b', '--falsepositive', action='store', type=float, required=True,
@@ -180,7 +182,22 @@ for p, q in itertools.combinations(columns, 2):
     model.addConstr(B[p][q]['01'] + B[p][q]['10'] + B[p][q]['11'] <= 2,
                     "constr_sum_B{0}-{1}".format(p, q))
 
+deletions = {}
+del_names = list()
+for p in columns:
+   if '-' in p:
+      del_names.append(p)
+      deletions[p] = model.addVar(vtype=GRB.BINARY, obj=0, name='Del[{0}]'.format(p))
+      for row_index, row in enumerate(input_matrix):
+         model.addConstr(deletions[p] >= P[row_index][p])
 
+if args.maxdel != -1:
+   model.addConstr(quicksum(deletions[x] for x in del_names) <= args.maxdel) 
+
+
+#print(deletions)
+
+#print(columns)
 print("UPDATE")
 model.update()
 
