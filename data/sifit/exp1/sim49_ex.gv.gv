@@ -1,0 +1,33 @@
+digraph G {
+node [color=deeppink4, style=filled, fontcolor=white];
+Root -> 29;
+Root -> 2;
+2 -> 23;
+Root -> 19;
+19 -> 12;
+Root -> 16;
+16 -> 4;
+Root -> 11;
+Root -> 3;
+Root -> 30;
+30 -> 15;
+Root -> 25;
+Root -> 6;
+Root -> 27;
+Root -> 7;
+Root -> 8;
+Root -> 5;
+5 -> 24;
+Root -> 1;
+1 -> 22;
+22 -> 28;
+Root -> 21;
+21 -> 10;
+10 -> 20;
+10 -> 9;
+Root -> 13;
+Root -> 14;
+Root -> 17;
+17 -> 26;
+Root -> 18;
+}
