@@ -10,8 +10,8 @@ git_repo = git.Repo(search_parent_directories=True)
 git_root = git_repo.git.rev_parse("--show-toplevel")
 
 # programs
-_ilp_ = git_root + '/gpps'
-_hc_ = git_root + '/hill_climbing.py'
+_ilp_ = git_root + '/gpps_ilp.py'
+_hc_ = git_root + '/gpps_hc.py'
 
 # memory and runtime
 memlimit = 64 * 1024 * 1024 # 64GB memory limit (in KB)

@@ -178,7 +178,7 @@ def print_solution(num_clones, num_samples, num_mutations, start_optimize,
         while c < num_clones:
             m = 0
             row = []
-            while m < num_mutations*k_model:
+            while m < num_mutations * k_model:
                 row.append(int(y[c, m].X))
                 m += 1
             extended_matrix.append(row)

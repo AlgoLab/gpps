@@ -1,16 +1,15 @@
 #!/usr/bin/env python
-# Compute the tree which maximizes the likehood
 import gurobipy
 import sys
 import os
-import math
 import errno
+import math
 from datetime import datetime
 import argparse
 import itertools
 
-from matrix_utils import *
-from outputs import *
+from utils_ilp import read_matrix_tab, expand_name
+
 
 #==================================================================#
 #========================= PREREQUISITES ==========================#
@@ -28,7 +27,8 @@ parser.add_argument('-t', '--time', action='store', type=int, required=True,
 parser.add_argument('-o', '--outdir', action='store', type=str, required=True,
                     help='output directory.')
 
-parser.add_argument('-d', '--maxdel', action='store', type=int, default=-1, help='maximum number of deletion allowed')
+parser.add_argument('-d', '--maxdel', action='store', type=int,
+                    default=-1, help='maximum number of deletion allowed')
 
 parser.add_argument('-e', '--exp', action='store_true', default=False,
                     help='set -e to get experimental-format results.')
@@ -63,7 +63,6 @@ max_error = 1
 print('Num mutations: %d' % num_mutations)
 print('Num clones: %d' % num_clones)
 
-import os
 try:
     os.makedirs(args.outdir)
 except OSError as exc:
@@ -78,7 +77,6 @@ outfile = os.path.join(args.outdir, filename)
 #==================================================================#
 #========================== GUROBI MODEL ==========================#
 #==================================================================#
-start_model_time = datetime.now()
 model = Model('Parsimony Phylogeny Model')
 model.setParam('Threads', 4)
 if args.time != 0:
@@ -88,12 +86,12 @@ if args.time != 0:
 #------------------- VARIABLES ---------------------#
 #---------------------------------------------------#
 
-#-----------Variable Y and B---------------
+# -----------Variable Y and B---------------
 
 lalpha = math.log(alpha)
 lbeta = math.log(beta)
-l_alpha = math.log(1-alpha)
-l_beta = math.log(1-beta)
+l_alpha = math.log(1 - alpha)
+l_beta = math.log(1 - beta)
 n_ones = 0
 n_zeros = 0
 
@@ -177,7 +175,7 @@ for p, q in itertools.combinations(columns, 2):
                         "constr_B01-{0}-{1}-{2}".format(p, q, row_index))
         model.addConstr(B[p][q]['10'] >= P[row_index][p] - P[row_index][q],
                         "constr_B10-{0}-{1}-{2}".format(p, q, row_index))
-        model.addConstr(B[p][q]['11'] >= P[row_index][p]+P[row_index][q]-1,
+        model.addConstr(B[p][q]['11'] >= P[row_index][p] + P[row_index][q] - 1,
                         "constr_B11-{0}-{1}-{2}".format(p, q, row_index))
     model.addConstr(B[p][q]['01'] + B[p][q]['10'] + B[p][q]['11'] <= 2,
                     "constr_sum_B{0}-{1}".format(p, q))
@@ -185,33 +183,23 @@ for p, q in itertools.combinations(columns, 2):
 deletions = {}
 del_names = list()
 for p in columns:
-   if '-' in p:
-      del_names.append(p)
-      deletions[p] = model.addVar(vtype=GRB.BINARY, obj=0, name='Del[{0}]'.format(p))
-      for row_index, row in enumerate(input_matrix):
-         model.addConstr(deletions[p] >= P[row_index][p])
+    if '-' in p:
+        del_names.append(p)
+        deletions[p] = model.addVar(
+            vtype=GRB.BINARY, obj=0, name='Del[{0}]'.format(p))
+        for row_index, row in enumerate(input_matrix):
+            model.addConstr(deletions[p] >= P[row_index][p])
 
 if args.maxdel != -1:
-   model.addConstr(quicksum(deletions[x] for x in del_names) <= args.maxdel) 
+    model.addConstr(quicksum(deletions[x] for x in del_names) <= args.maxdel)
 
-
-#print(deletions)
-
-#print(columns)
-print("UPDATE")
 model.update()
-
-#-------------OBJECTIVE FUNCTION-----------
-
 model.modelSense = GRB.MAXIMIZE
 model.update()
 
 #---------------------------------------------------#
-#------------------ CONSTRAINTS --------------------#
+#-------------------- OPTIMIZE ---------------------#
 #---------------------------------------------------#
-
-
-#-------------Model Specific constraints------------
 
 
 if args.mps:

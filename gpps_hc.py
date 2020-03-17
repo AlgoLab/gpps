@@ -15,53 +15,50 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from tree_hc import *
-from utils import *
+from utils_hc import copy_tree, prune_and_reattach, build_tree_from_file, print_dot_tree_file, import_ilp_out, import_scs_input
 from functools import lru_cache
-import argparse, os, sys, errno, random
+import argparse
+import os
+import sys
+import errno
+import random
+
 
 @lru_cache(maxsize=None)
 def cell_row_likelihood(input_row, node_genotype, alpha, beta):
     likelihood = 0
-    # TODO: fix not valid losses
     for j in range(len(input_row)):
         if input_row[j] == '0':
-            # print(row, j)
             if node_genotype[j] == '0':
                 likelihood += np.log(1 - beta)
             elif node_genotype[j] == '1':
                 likelihood += np.log(alpha)
             else:
-                # print('Error: ', node_genotype)
                 likelihood += -np.inf
         elif input_row[j] == '1':
-            # print(row, j)
             if node_genotype[j] == '0':
                 likelihood += np.log(beta)
             elif node_genotype[j] == '1':
                 likelihood += np.log(1 - alpha)
             else:
-            #     print('Error: ', node_genotype)
                 likelihood += -np.inf
 
         elif input_row[j] == '2':
             likelihood += 0
     return likelihood
 
+
 def greedy_tree_likelihood(tree, nid_dict, input_scs, alpha, beta):
     likelihood = 0
     attachment = []
     for row in input_scs:
-        # print('row', row, len(row))
         str_row = ''.join(str(int(x)) for x in row)
         best_lh = -np.inf
         best_attachment = -1
         for node in nid_dict:
-            # if nid_dict[node].parent:
-            #     print('node', nid_dict[node].name, nid_dict[node].genotype_profile, nid_dict[node].parent.genotype_profile)
-            str_gt = ''.join(str(int(x)) for x in nid_dict[node].genotype_profile)
-            # print(str_gt)
-            # print(str_row)
+            str_gt = ''.join(str(int(x))
+                             for x in nid_dict[node].genotype_profile)
+
             lh = cell_row_likelihood(str_row, str_gt, alpha, beta)
             if lh > best_lh:
                 best_lh = lh
@@ -71,8 +68,10 @@ def greedy_tree_likelihood(tree, nid_dict, input_scs, alpha, beta):
 
     return likelihood, attachment
 
+
 def get_expect_matrix(tree, nid_dict, input_scs, alpha, beta):
-    _, attachment = greedy_tree_likelihood(tree, nid_dict, input_scs, alpha, beta)
+    _, attachment = greedy_tree_likelihood(
+        tree, nid_dict, input_scs, alpha, beta)
     e_matrix = []
 
     for node in nid_dict:
@@ -84,9 +83,10 @@ def get_expect_matrix(tree, nid_dict, input_scs, alpha, beta):
         e_matrix.append(nid_dict[attachment[c]].genotype_profile)
     return e_matrix
 
-def generate_neighbourhood(start_tree, start_nid_dict, neighbourhood_size):
-    neighbours = []
-    while len(neighbours) < neighbourhood_size:
+
+def generate_neighborhood(start_tree, start_nid_dict, neighborhood_size):
+    neighbors = []
+    while len(neighbors) < neighborhood_size:
         # prune-reattach only
         cp_tree, cp_dict = copy_tree(start_tree)
         node_ids = list(cp_dict.keys())
@@ -95,21 +95,19 @@ def generate_neighbourhood(start_tree, start_nid_dict, neighbourhood_size):
 
         if prune != reattach:
             if prune_and_reattach(cp_dict[prune], cp_dict[reattach], cp_dict):
-                # print('neig in')
-                # check_subtree_losses(cp_tree, cp_dict)
-                # calculate_genotype_profile_subtree(cp_tree, cp_dict)
-                # print('neig out')
-                neighbours.append((cp_tree, cp_dict))
+                neighbors.append((cp_tree, cp_dict))
             else:
                 cp_tree = None
                 cp_dict = None
-    return(neighbours)
+    return(neighbors)
 
-def hill_climbing(start_tree, start_nid_dict, neighbourhood_size, max_iterations, alpha, beta, input_scs, proc_id=0):
+
+def hill_climbing(start_tree, start_nid_dict, neighborhood_size, max_iterations, alpha, beta, input_scs, proc_id=0):
     current_tree = start_tree
     current_dict = start_nid_dict
     # print('out_for')
-    current_lh, _ = greedy_tree_likelihood(start_tree, start_nid_dict, input_scs, alpha, beta)
+    current_lh, _ = greedy_tree_likelihood(
+        start_tree, start_nid_dict, input_scs, alpha, beta)
     print('start lh: %f' % current_lh)
 
     # print(input_scs)
@@ -119,13 +117,15 @@ def hill_climbing(start_tree, start_nid_dict, neighbourhood_size, max_iterations
 
         print('Current iteration: %d' % current_iteration)
 
-        neighbours = generate_neighbourhood(current_tree, current_dict, neighbourhood_size)
+        neighbors = generate_neighborhood(
+            current_tree, current_dict, neighborhood_size)
         next_eval = -np.inf
         next_sol = None
 
-        for ng in neighbours:
+        for ng in neighbors:
             # print(ng)
-            ng_lh, _ = greedy_tree_likelihood(ng[0], ng[1], input_scs, alpha, beta)
+            ng_lh, _ = greedy_tree_likelihood(
+                ng[0], ng[1], input_scs, alpha, beta)
 
             if ng_lh > next_eval:
                 next_eval = ng_lh
@@ -140,7 +140,9 @@ def hill_climbing(start_tree, start_nid_dict, neighbourhood_size, max_iterations
 
     return current_tree, current_dict
 
-parser = argparse.ArgumentParser(description='gpps- hill climber', add_help=True)
+
+parser = argparse.ArgumentParser(
+    description='gpps- hill climber', add_help=True)
 parser.add_argument('-i', '--ilpfile', action='store', type=str, required=True,
                     help='path of the ILP output file.')
 parser.add_argument('-s', '--scsfile', action='store', type=str, required=True,
@@ -191,22 +193,24 @@ except OSError as exc:
     else:
         raise
 
-imported_tree, imported_nid_dict = built_tree   
-greedy_tree_likelihood(imported_tree, imported_nid_dict, INPUT_SCS_MATRIX, ALPHA, BETA)
+imported_tree, imported_nid_dict = built_tree
+greedy_tree_likelihood(imported_tree, imported_nid_dict,
+                       INPUT_SCS_MATRIX, ALPHA, BETA)
 
 with open('%s/%s.input.gv' % (args.outdir, OUTFILE), 'w+') as fout:
     print_dot_tree_file(imported_tree, fout)
-hc_best_tree, hc_best_dict = hill_climbing(imported_tree, imported_nid_dict, neighbourhood_size=args.ns, max_iterations=args.mi, alpha=ALPHA, beta=BETA, input_scs=INPUT_SCS_MATRIX)
-
+hc_best_tree, hc_best_dict = hill_climbing(imported_tree, imported_nid_dict, neighborhood_size=args.ns,
+                                           max_iterations=args.mi, alpha=ALPHA, beta=BETA, input_scs=INPUT_SCS_MATRIX)
 
 
 with open('%s/%s.hill_climbing.gv' % (args.outdir, OUTFILE), 'w+') as fout:
     print_dot_tree_file(hc_best_tree, fout)
 
 with open('%s/%s.hill_climbing.scs.out' % (args.outdir, OUTFILE), 'w+') as fout:
-    e_mat = get_expect_matrix(hc_best_tree, hc_best_dict, INPUT_SCS_MATRIX, ALPHA, BETA)
+    e_mat = get_expect_matrix(
+        hc_best_tree, hc_best_dict, INPUT_SCS_MATRIX, ALPHA, BETA)
     for row in e_mat:
         fout.write(' '.join(str(x) for x in row))
         fout.write('\n')
 
-print(cell_row_likelihood.cache_info())
+# print(cell_row_likelihood.cache_info())
