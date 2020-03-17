@@ -30,7 +30,8 @@ parser.add_argument('-o', '--outdir', action='store', type=str, required=True,
 
 parser.add_argument('-d', '--maxdel', action='store', type=int,
                     default=-1, help='maximum number of deletion allowed')
-
+parser.add_argument('-c', '--cores', action='store', type=int, default=4,
+                    help='Total number of cores (default 4).')
 parser.add_argument('-b', '--falsepositive', action='store', type=float, required=True,
                     help='set -b False positive probability.')
 parser.add_argument('-a', '--falsenegative', action='store', type=float, required=True,
@@ -77,7 +78,7 @@ outfile = os.path.join(args.outdir, filename)
 #========================== GUROBI MODEL ==========================#
 #==================================================================#
 model = gp.Model('Parsimony Phylogeny Model')
-model.setParam('Threads', 4)
+model.setParam('Threads', args.cores)
 if args.time != 0:
     model.setParam('TimeLimit', args.time)
 
