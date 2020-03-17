@@ -263,7 +263,6 @@ def check_subtree_losses(node, nid_dict):
 
 def import_ilp_out(filepath, k_dollo, mutation_names):
     in_matrix = np.genfromtxt(filepath, skip_header=0, delimiter=' ')
-    print(in_matrix.shape)
     mut_names = []
     mut_ids = []
 

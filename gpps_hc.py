@@ -107,17 +107,15 @@ def generate_neighborhood(start_tree, start_nid_dict, neighborhood_size):
 def hill_climbing(start_tree, start_nid_dict, neighborhood_size, max_iterations, alpha, beta, input_scs, proc_id=0):
     current_tree = start_tree
     current_dict = start_nid_dict
-    # print('out_for')
     current_lh, _ = greedy_tree_likelihood(
         start_tree, start_nid_dict, input_scs, alpha, beta)
-    print('start lh: %f' % current_lh)
+    print('Initial log-likelihood: %f' % current_lh)
 
-    # print(input_scs)
-
-    current_iteration = 0
+    current_iteration = 1
     while current_iteration < max_iterations:
 
-        print('Current iteration: %d' % current_iteration)
+        if current_iteration % 10 == 0:
+            print('Current iteration: %d' % current_iteration)
 
         neighbors = generate_neighborhood(
             current_tree, current_dict, neighborhood_size)
@@ -158,10 +156,10 @@ parser.add_argument('-b', '--falsepositive', action='store', type=float, require
                     help='set -b False positive probability.')
 parser.add_argument('-a', '--falsenegative', action='store', type=float, required=True,
                     help='set -a False negative probability.')
-parser.add_argument('--ns', action='store', type=int, required=True,
-                    help='Hill climbing neighbourhood size.')
-parser.add_argument('--mi', action='store', type=int, required=True,
-                    help='Hill climbing maximum iterations.')
+parser.add_argument('--ns', action='store', type=int, default=30,
+                    help='Hill climbing neighbourhood size.(default 30)')
+parser.add_argument('--mi', action='store', type=int, default=100,
+                    help='Hill climbing maximum iterations. (default 100)')
 parser.add_argument('--names', action='store', type=str,
                     help='Mutation names.')
 args = parser.parse_args()
@@ -214,5 +212,3 @@ with open('%s/%s.hill_climbing.scs.out' % (args.outdir, OUTFILE), 'w+') as fout:
     for row in e_mat:
         fout.write(' '.join(str(x) for x in row))
         fout.write('\n')
-
-# print(cell_row_likelihood.cache_info())
