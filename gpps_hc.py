@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Copyright 2018
 # Simomne Ciccolella
 #
@@ -142,7 +144,7 @@ def hill_climbing(start_tree, start_nid_dict, neighborhood_size, max_iterations,
 
 
 parser = argparse.ArgumentParser(
-    description='gpps- hill climber', add_help=True)
+    description='gpps- Hill Climber', add_help=True)
 parser.add_argument('-i', '--ilpfile', action='store', type=str, required=True,
                     help='path of the ILP output file.')
 parser.add_argument('-s', '--scsfile', action='store', type=str, required=True,

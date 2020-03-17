@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-import gurobipy
+import gurobipy as gp
+from gurobipy import GRB
 import sys
 import os
 import errno
@@ -16,22 +17,20 @@ from utils_ilp import read_matrix_tab, expand_name
 #==================================================================#
 
 #--------------------------Parse Arguments-------------------------#
-parser = argparse.ArgumentParser(description='gpps', add_help=True)
+parser = argparse.ArgumentParser(description='gpps- ILP', add_help=True)
 
 parser.add_argument('-f', '--file', action='store', type=str, required=True,
                     help='path of the input file.')
-parser.add_argument('-k', action='store', type=int,
+parser.add_argument('-k', action='store', type=int, required=True,
                     help='k-value of the selected model. Eg: Dollo(k)')
-parser.add_argument('-t', '--time', action='store', type=int, required=True,
-                    help='maximum time allowed for the computation. Type 0 to not impose a limit.')
+parser.add_argument('-t', '--time', action='store', type=int, default=0,
+                    help='maximum time allowed for the computation. Type 0 to not impose a limit (default).')
 parser.add_argument('-o', '--outdir', action='store', type=str, required=True,
                     help='output directory.')
 
 parser.add_argument('-d', '--maxdel', action='store', type=int,
                     default=-1, help='maximum number of deletion allowed')
 
-parser.add_argument('-e', '--exp', action='store_true', default=False,
-                    help='set -e to get experimental-format results.')
 parser.add_argument('-b', '--falsepositive', action='store', type=float, required=True,
                     help='set -b False positive probability.')
 parser.add_argument('-a', '--falsenegative', action='store', type=float, required=True,
@@ -77,7 +76,7 @@ outfile = os.path.join(args.outdir, filename)
 #==================================================================#
 #========================== GUROBI MODEL ==========================#
 #==================================================================#
-model = Model('Parsimony Phylogeny Model')
+model = gp.Model('Parsimony Phylogeny Model')
 model.setParam('Threads', 4)
 if args.time != 0:
     model.setParam('TimeLimit', args.time)
@@ -144,13 +143,13 @@ for row_index, row in enumerate(input_matrix):
             model.update()
             model.addConstr(F[row_index][col_index] == 1 - fminus[row_index][col_index],
                             name='constr_def_fminus{0}-{1}'.format(row_index, col_index))
-            model.addConstr(F[row_index][col_index] == P[row_index][names[0]] - quicksum(P[row_index][name] for name in names[1:]),
+            model.addConstr(F[row_index][col_index] == P[row_index][names[0]] - gp.quicksum(P[row_index][name] for name in names[1:]),
                             name='constr_balance_F{0}-{1}'.format(row_index, col_index))
-            model.addConstr(P[row_index][names[0]] >= quicksum(P[row_index][name] for name in names[1:]),
+            model.addConstr(P[row_index][names[0]] >= gp.quicksum(P[row_index][name] for name in names[1:]),
                             name='constr_imbalance_P{0}-{1}'.format(row_index, col_index))
 
 # There are only a few false positives
-model.addConstr(4 >= quicksum(FP[r][c] for r in FP.keys() for c in FP[r].keys()),
+model.addConstr(4 >= gp.quicksum(FP[r][c] for r in FP.keys() for c in FP[r].keys()),
                 name='constr_few_FP')
 
 model.update()
@@ -191,7 +190,8 @@ for p in columns:
             model.addConstr(deletions[p] >= P[row_index][p])
 
 if args.maxdel != -1:
-    model.addConstr(quicksum(deletions[x] for x in del_names) <= args.maxdel)
+    model.addConstr(gp.quicksum(deletions[x]
+                                for x in del_names) <= args.maxdel)
 
 model.update()
 model.modelSense = GRB.MAXIMIZE
