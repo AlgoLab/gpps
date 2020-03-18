@@ -197,16 +197,18 @@ imported_tree, imported_nid_dict = built_tree
 greedy_tree_likelihood(imported_tree, imported_nid_dict,
                        INPUT_SCS_MATRIX, ALPHA, BETA)
 
-with open('%s/%s.input.gv' % (args.outdir, OUTFILE), 'w+') as fout:
+with open('%s/%s' % (args.outdir, OUTFILE.replace('extended', 'tree.gv')), 'w+') as fout:
     print_dot_tree_file(imported_tree, fout)
+
+
 hc_best_tree, hc_best_dict = hill_climbing(imported_tree, imported_nid_dict, neighborhood_size=args.ns,
                                            max_iterations=args.mi, alpha=ALPHA, beta=BETA, input_scs=INPUT_SCS_MATRIX)
 
 
-with open('%s/%s.hill_climbing.gv' % (args.outdir, OUTFILE), 'w+') as fout:
+with open('%s/%s.tree.gv' % (args.outdir, OUTFILE.replace('.ilp.extended', '.hc.expected')), 'w+') as fout:
     print_dot_tree_file(hc_best_tree, fout)
 
-with open('%s/%s.hill_climbing.scs.out' % (args.outdir, OUTFILE), 'w+') as fout:
+with open('%s/%s.scs.out' % (args.outdir, OUTFILE.replace('.ilp.extended', '.hc.expected')), 'w+') as fout:
     e_mat = get_expect_matrix(
         hc_best_tree, hc_best_dict, INPUT_SCS_MATRIX, ALPHA, BETA)
     for row in e_mat:
