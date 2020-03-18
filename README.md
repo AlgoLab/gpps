@@ -23,8 +23,11 @@ More details are described in the following sections. This script merges the two
 methods (ILP and Hill Climbing) in a single pipeline. The usage of the two sub-modules,
 that can be run independently, is described below.
 
-The entire workflow can be run in the example as:
-`./gpps -f data/examples/ex_scs.txt -a 0.1 -b 10e-4 -k 1 -o example -c 16 -t 300 -d 4 -N 50 -M 200 -n data/examples/ex_names.txt`
+The entire workflow can be run on the example files using all the arguments with:
+`./gpps -f data/examples/ex_scs.txt -a 0.1 -b 10e-4 -k 1 -o example -c 16 -t 100 -d 4 -N 50 -M 200 -n data/examples/ex_names.txt`
+
+Alternatively it can be run only with the required arguments:
+`./gpps -f data/examples/ex_scs.txt -a 0.1 -b 10e-4 -k 1 -o example`
 
 The method will produce in the folder `example` the files:
 - `ex_scs.ilp.extended.out` produced by `gpps_ilp` is the expected extended matrix.
@@ -45,8 +48,8 @@ optional arguments:
   -h, --help            show this help message and exit
   -f FILE, --file FILE  path of the input file.
   -k K                  k-value of the selected model. Eg: Dollo(k)
-  -t TIME, --time TIME  maximum time allowed for the computation. Type 0 to
-                        not impose a limit (default).
+  -t TIME, --time TIME  maximum time allowed for the computation (in seconds).
+                        Type 0 to not impose a limit (default 300).
   -o OUTDIR, --outdir OUTDIR
                         output directory.
   -d MAXDEL, --maxdel MAXDEL
@@ -59,6 +62,8 @@ optional arguments:
                         set -a False negative probability.
   --mps                 This will output the model in MPS format instead of
                         running the solver
+usage: gpps_hc.py [-h] -i ILPFILE -s SCSFILE -k K -o OUTDIR -b FALSEPOSITIVE
+                  -a FALSENEGATIVE [--ns NS] [--mi MI] [--names NAMES]
 
 ```
 
