@@ -23,8 +23,8 @@ parser.add_argument('-f', '--file', action='store', type=str, required=True,
                     help='path of the input file.')
 parser.add_argument('-k', action='store', type=int, required=True,
                     help='k-value of the selected model. Eg: Dollo(k)')
-parser.add_argument('-t', '--time', action='store', type=int, default=0,
-                    help='maximum time allowed for the computation. Type 0 to not impose a limit (default).')
+parser.add_argument('-t', '--time', action='store', type=int, default=300,
+                    help='maximum time allowed for the computation (in seconds). Type 0 to not impose a limit (default 300).')
 parser.add_argument('-o', '--outdir', action='store', type=str, required=True,
                     help='output directory.')
 
