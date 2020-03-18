@@ -12,7 +12,7 @@ NS=30
 MI=100
 NAMES=""
 
-while getopts ":ha:b:k:t:o:f:c:n:N:M:" opt; do
+while getopts ":ha:b:k:t:o:f:c:n:N:M:d:" opt; do
   case ${opt} in
     a )
         FALSENEG=$OPTARG
