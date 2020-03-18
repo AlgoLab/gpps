@@ -2,20 +2,23 @@
 
 ## Running the entire `gpps` pipeline
 
+We provide `gpps`,
+that can be used to infer cancer progressions from single cell data.
+Differently from the previous tool.
+`gpps` employs a maximum likelihood search
+to find the best tree that explain the input, starting from single cell data.
+
+<!-- For a detailed description please refer to our paper: -->
+
+
+The tool can be run with the following arguments:
 
 
 ## ILP step
 
-We provide *gpps*,
-that can be used to infer cancer progressions from single cell data.
-Differently from the previous tool, *gpps* employs a maximum likelihood search
-to find the best tree that explain the input, starting from single cell data.
-
-The tool can be run with the following arguments:
-
 ```
-usage: gpps_ilp.py [-h] -f FILE [-k K] -t TIME -o OUTDIR [-d MAXDEL] [-e] -b
-                   FALSEPOSITIVE -a FALSENEGATIVE [--mps]
+usage: gpps_ilp.py [-h] -f FILE -k K [-t TIME] -o OUTDIR [-d MAXDEL]
+                   [-c CORES] -b FALSEPOSITIVE -a FALSENEGATIVE [--mps]
 
 gpps- ILP
 
@@ -48,9 +51,8 @@ Running the example `python3 gpps_ilp.py -f data/examples/ex_scs.txt -a 0.1 -b 1
 ## Hill Climbing step
 
 ```
-sage: hill_climbing.py [-h] -i ILPFILE -s SCSFILE -k K -o OUTDIR -b
-                        FALSEPOSITIVE -a FALSENEGATIVE --ns NS --mi MI
-                        [--names NAMES]
+usage: gpps_hc.py [-h] -i ILPFILE -s SCSFILE -k K -o OUTDIR -b FALSEPOSITIVE
+                  -a FALSENEGATIVE [--ns NS] [--mi MI] [--names NAMES]
 
 gpps- Hill Climber
 
@@ -68,9 +70,18 @@ optional arguments:
                         set -b False positive probability.
   -a FALSENEGATIVE, --falsenegative FALSENEGATIVE
                         set -a False negative probability.
-  --ns NS               Hill climbing neighbourhood size.(default 30)
+  --ns NS               Hill climbing neighborhood size.(default 30)
   --mi MI               Hill climbing maximum iterations. (default 100)
   --names NAMES         Mutation names.
 ```
 
+Where `-a` and `-b` are respectively the false negative and false positive rates for the
+Single Cell Sequencing.
+
 Running the example `python3 gpps_hc.py -s data/examples/ex_scs.txt -i example/ex_scs.ilp.extended.out -k 1 -a 0.1 -b 10e-4 -k 1 -o example`.
+
+### Prerequisites necessary to run the tool
+
+- Python 3.6+
+- Ruby 2.5+
+- Gurobi 8.0+ [ A free academic license can be obtained at https://www.gurobi.com/ ]

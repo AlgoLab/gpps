@@ -270,7 +270,7 @@ def import_ilp_out(filepath, k_dollo, mutation_names):
     for mut in mutation_names:
         mut_names.append(mut)
         mut_ids.append(mut_index)
-        for i in range(k_dollo):
+        for _ in range(k_dollo):
             mut_names.append('%s---' % mut)
             mut_ids.append(mut_index)
         mut_index += 1

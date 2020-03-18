@@ -1,0 +1,117 @@
+#!/bin/bash
+
+FALSENEG=""
+FALSEPOS=""
+K=-1
+TIME=0
+OUTDIR=""
+FILESCS=""
+CORES=4
+MAXDEL=-1
+NS=30
+MI=100
+NAMES=""
+
+while getopts ":ha:b:k:t:o:f:c:n:N:M:" opt; do
+  case ${opt} in
+    a )
+        FALSENEG=$OPTARG
+      ;;
+    b )
+        FALSEPOS=$OPTARG
+      ;;
+    k )
+        K=$OPTARG
+      ;;
+    o )
+        OUTDIR=$OPTARG
+      ;;
+    f )
+        FILESCS=$OPTARG
+      ;;
+
+    # Optional arguments
+    t )
+        TIME=$OPTARG
+      ;;
+    c )
+        CORES=$OPTARG
+      ;;
+    d )
+        MAXDEL=$OPTARG
+      ;;
+    n )
+        NAMES=$OPTARG
+      ;;
+    N )
+        NS=$OPTARG
+      ;;
+    M )
+        MI=$OPTARG
+      ;;
+    # \? )
+    #     echo "Usage: gpps [-h] -f FILE -a FALSENEGATIVE -b FALSEPOSITIVE -k K -o OUTDIR"
+    #     echo -e "\t\t [-c CORES] [--names NAMES] [-N HC_NeighborSize] [-M HC_MaximumIteration]"
+    #   ;;
+    h )
+        echo "Usage: gpps [-h] -f FILE -a FALSENEGATIVE -b FALSEPOSITIVE -k K -o OUTDIR" 
+        echo -e "\t\t [-c CORES] [--names NAMES] [-N HC_NeighborSize] [-M HC_MaximumIteration]"
+        echo ""
+
+        python3 gpps_ilp.py -h
+        python3 gpps_hc.py -h
+        exit
+      ;;
+  esac
+done
+
+
+# Check non-optional args
+QUIT=0
+
+if [ -z $FALSENEG ]; then
+    echo "Error: Missing argument: -a FALSENEGATIVE"
+    QUIT=1
+fi
+if [ -z $FALSEPOS ]; then
+    echo "Error: Missing argument: -b FALSEPOSITIVE"
+    QUIT=1
+fi
+if [ "$K" -eq "-1" ]; then
+    echo "Error: Missing argument: -k Dollo-k"
+    QUIT=1
+fi
+if [ -z $FILESCS ]; then
+    echo "Error: Missing argument: -f FILE"
+    QUIT=1
+fi
+if [ ! -f $FILESCS ]; then
+    echo "Error: FILE does not exists"
+    QUIT=1
+fi
+if [ -z $OUTDIR ]; then
+    echo "Error: Missing argument: -o OUTDIR"
+    QUIT=1
+fi
+
+
+if [ "$QUIT" -eq "1" ]; then
+    echo "Usage: gpps [-h] -f FILE -a FALSENEGATIVE -b FALSEPOSITIVE -k K -o OUTDIR" 
+    echo -e "\t\t [-c CORES] [--names NAMES] [-N HC_NeighborSize] [-M HC_MaximumIteration]"
+    echo ""
+
+    exit 1
+fi
+
+python3 gpps_ilp.py -f $FILESCS -k $K -t $TIME -o $OUTDIR -d $MAXDEL \
+        -c $CORES -b $FALSEPOS -a $FALSENEG
+
+ILPFILE="$OUTDIR/$(echo $(basename $FILESCS) | cut -f 1 -d '.').ilp.extended.out"
+
+if [ ! -z $NAMES ]; then
+    python3 gpps_hc.py -i $ILPFILE -s $FILESCS -k $K -o $OUTDIR -b $FALSEPOS \
+        -a $FALSENEG --ns $NS --mi $MI --names $NAMES
+else
+    python3 gpps_hc.py -i $ILPFILE -s $FILESCS -k $K -o $OUTDIR -b $FALSEPOS \
+        -a $FALSENEG --ns $NS --mi $MI
+fi

@@ -157,7 +157,7 @@ parser.add_argument('-b', '--falsepositive', action='store', type=float, require
 parser.add_argument('-a', '--falsenegative', action='store', type=float, required=True,
                     help='set -a False negative probability.')
 parser.add_argument('--ns', action='store', type=int, default=30,
-                    help='Hill climbing neighbourhood size.(default 30)')
+                    help='Hill climbing neighborhood size.(default 30)')
 parser.add_argument('--mi', action='store', type=int, default=100,
                     help='Hill climbing maximum iterations. (default 100)')
 parser.add_argument('--names', action='store', type=str,
