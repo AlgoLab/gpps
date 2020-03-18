@@ -115,12 +115,12 @@ if [ "$QUIT" -eq "1" ]; then
     exit 1
 fi
 
-# python3 gpps_ilp.py -f $FILESCS -k $K -t $TIME -o $OUTDIR -d $MAXDEL \
-#         -c $CORES -b $FALSEPOS -a $FALSENEG
+python3 gpps_ilp.py -f $FILESCS -k $K -t $TIME -o $OUTDIR -d $MAXDEL \
+        -c $CORES -b $FALSEPOS -a $FALSENEG
 
-# if [ ! $? -eq 0 ]; then
-# exit 1
-# fi
+if [ ! $? -eq 0 ]; then
+exit 1
+fi
 
 ILPFILE="$OUTDIR/$(echo $(basename $FILESCS) | cut -f 1 -d '.').ilp.extended.out"
 
