@@ -13,6 +13,25 @@ to find the best tree that explain the input, starting from single cell data.
 
 The tool can be run with the following arguments:
 
+```
+Usage: gpps [-h] -f FILE -a FALSENEGATIVE -b FALSEPOSITIVE -k K -o OUTDIR
+		 [-d MAXDEL] [-n NAMES] [-c CORES] [-t TIME] 
+		 [-N HC_NeighborSize] [-M HC_MaximumIteration]
+```
+
+More details are described in the following sections. This script merges the two parts of the 
+methods (ILP and Hill Climbing) in a single pipeline. The usage of the two sub-modules,
+that can be run independently, is described below.
+
+The entire workflow can be run in the example as:
+`./gpps -f data/examples/ex_scs.txt -a 0.1 -b 10e-4 -k 1 -o example -c 16 -t 300 -d 4 -N 50 -M 200 -n data/examples/ex_names.txt`
+
+The method will produce in the folder `example` the files:
+- `ex_scs.ilp.extended.out` produced by `gpps_ilp` is the expected extended matrix.
+- `ex_scs.ilp.log` produced by `gpps_ilp` contains the optimal likelihood computed by the ILP.
+- `ex_scs.ilp.tree.gv` produced by `gpps_hc` is the tree computed by the ILP.
+- `ex_scs.hc.expected.scs.out` produced by `gpps_hc` is the optimal expected matrix computed by the HC.
+- `ex_scs.hc.expected.tree.gv` produced by `gpps_hc` is the optimal tree computed by the HC.
 
 ## ILP step
 

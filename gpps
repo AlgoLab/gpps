@@ -49,13 +49,24 @@ while getopts ":ha:b:k:t:o:f:c:n:N:M:" opt; do
     M )
         MI=$OPTARG
       ;;
-    # \? )
-    #     echo "Usage: gpps [-h] -f FILE -a FALSENEGATIVE -b FALSEPOSITIVE -k K -o OUTDIR"
-    #     echo -e "\t\t [-c CORES] [--names NAMES] [-N HC_NeighborSize] [-M HC_MaximumIteration]"
-    #   ;;
+    \? )
+        echo "Error: unknown option -$OPTARG"
+        echo "Usage: gpps [-h] -f FILE -a FALSENEGATIVE -b FALSEPOSITIVE -k K -o OUTDIR"
+        echo -e "\t\t [-c CORES] [--names NAMES] [-N HC_NeighborSize] [-M HC_MaximumIteration]"
+
+        exit 1
+      ;;
+    : )
+        echo "Error: missing option argument for -$OPTARG"
+        echo "Usage: gpps [-h] -f FILE -a FALSENEGATIVE -b FALSEPOSITIVE -k K -o OUTDIR"
+        echo -e "\t\t [-c CORES] [--names NAMES] [-N HC_NeighborSize] [-M HC_MaximumIteration]"
+
+        exit 1
+      ;;
     h )
         echo "Usage: gpps [-h] -f FILE -a FALSENEGATIVE -b FALSEPOSITIVE -k K -o OUTDIR" 
-        echo -e "\t\t [-c CORES] [--names NAMES] [-N HC_NeighborSize] [-M HC_MaximumIteration]"
+        echo -e "\t\t [-d MAXDEL] [-n NAMES] [-c CORES] [-t TIME] "
+        echo -e "\t\t [-N HC_NeighborSize] [-M HC_MaximumIteration]"
         echo ""
 
         python3 gpps_ilp.py -h
@@ -97,14 +108,19 @@ fi
 
 if [ "$QUIT" -eq "1" ]; then
     echo "Usage: gpps [-h] -f FILE -a FALSENEGATIVE -b FALSEPOSITIVE -k K -o OUTDIR" 
-    echo -e "\t\t [-c CORES] [--names NAMES] [-N HC_NeighborSize] [-M HC_MaximumIteration]"
+    echo -e "\t\t [-d MAXDEL] [-n NAMES] [-c CORES] [-t TIME] "
+    echo -e "\t\t [-N HC_NeighborSize] [-M HC_MaximumIteration]"
     echo ""
 
     exit 1
 fi
 
-python3 gpps_ilp.py -f $FILESCS -k $K -t $TIME -o $OUTDIR -d $MAXDEL \
-        -c $CORES -b $FALSEPOS -a $FALSENEG
+# python3 gpps_ilp.py -f $FILESCS -k $K -t $TIME -o $OUTDIR -d $MAXDEL \
+#         -c $CORES -b $FALSEPOS -a $FALSENEG
+
+# if [ ! $? -eq 0 ]; then
+# exit 1
+# fi
 
 ILPFILE="$OUTDIR/$(echo $(basename $FILESCS) | cut -f 1 -d '.').ilp.extended.out"
 
